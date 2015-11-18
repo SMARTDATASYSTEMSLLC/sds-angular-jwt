@@ -3,7 +3,7 @@ sds-angular-jwt
 
 Angular Auth Control
 
-To Install this package:
+To Install this package (not published yet):
 
     bower install sds-angular-jwt --save
     

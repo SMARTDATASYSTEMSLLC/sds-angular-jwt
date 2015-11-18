@@ -396,9 +396,10 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
     function authForgotPasswordDirective ($q, $location, $timeout, authProvider) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
-                redirectUrl: "=",
-                loginUrl: "=",
+                redirectUrl: "@",
+                loginUrl: "@",
                 onSubmit: '&'
             },
             templateUrl: 'sds-angular-jwt/directives/auth-forgot-password-directive.html',
@@ -416,7 +417,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 vm.submit = function (form){
                     vm.message = "";
                     if (form.$valid) {
-                        $q.when($scope.onSubmit(vm.user)).then(function (){
+                        $q.when($scope.onSubmit()(vm.user)).then(function (){
                             vm.success = true;
                             if($scope.redirectUrl) {
                                 $timeout(function (){
@@ -453,7 +454,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             restrict: 'EA',
             scope: {
                 // ater logging in, redirect to specific page
-                redirectUrl: "=",
+                redirectUrl: "@",
                 // or call a function
                 onLogin: '&?'
             },
@@ -508,9 +509,10 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
     function authRegisterDirective ($q, $timeout, $location, authService, authProvider) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
-                redirectUrl: "=",
-                loginUrl: "=",
+                redirectUrl: "@",
+                loginUrl: "@",
                 onSubmit: '&'
             },
             templateUrl: 'sds-angular-jwt/directives/auth-register-directive.html',
@@ -535,7 +537,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                             }
                         }
 
-                        $q.when($scope.onSubmit(vm.user)).then(function (){
+                        $q.when($scope.onSubmit()(vm.user)).then(function (){
                             if (!authService.authentication.isAuth){
                                 authService.login(vm.user).then(function () {
                                     vm.success = true;
@@ -580,9 +582,10 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
     function authResetPasswordDirective ($q, $location, $timeout, authProvider) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
-                redirectUrl: "=",
-                loginUrl: "=",
+                redirectUrl: "@",
+                loginUrl: "@",
                 onSubmit: '&',
                 token: '='
             },
@@ -609,7 +612,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                             delete user.confirmPassword;
                             user.token = $scope.token;
 
-                            $q.when($scope.onSubmit(user)).then(function () {
+                            $q.when($scope.onSubmit()(user)).then(function () {
                                 vm.success = true;
                                 if($scope.redirectUrl) {
                                     $timeout(function (){
@@ -644,7 +647,7 @@ angular.module('sds-angular-jwt').run(['$templateCache', function($templateCache
   'use strict';
 
   $templateCache.put('sds-angular-jwt/directives/auth-forgot-password-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> </div> <p ng-bind=\"vm.loc.forgotPasswordText\"></p> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successForgotPasswordTitle}}</h4> <p ng-bind=\"vm.loc.successForgotPassword\"></p> <a ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
+    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> </div> <p ng-bind=\"vm.loc.forgotPasswordText\"></p> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> <ng-transclude></ng-transclude> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successForgotPasswordTitle}}</h4> <p ng-bind=\"vm.loc.successForgotPassword\"></p> <a ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
   );
 
 
@@ -659,7 +662,7 @@ angular.module('sds-angular-jwt').run(['$templateCache', function($templateCache
 
 
   $templateCache.put('sds-angular-jwt/directives/auth-reset-password-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> <div ng-show=\"authForm.confirmPassword.$error.required\" ng-bind=\"vm.loc.errorConfirm\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"confirmPassword\">{{vm.loc.confirm}} *</label> <input class=\"form-control\" type=\"password\" name=\"confirmPassword\" id=\"confirmPassword\" ng-model=\"vm.user.confirmPassword\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successResetPasswordTitle}}</h4> <p ng-bind=\"vm.loc.successResetPassword\"></p> <a ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
+    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> <div ng-show=\"authForm.confirmPassword.$error.required\" ng-bind=\"vm.loc.errorConfirm\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"confirmPassword\">{{vm.loc.confirm}} *</label> <input class=\"form-control\" type=\"password\" name=\"confirmPassword\" id=\"confirmPassword\" ng-model=\"vm.user.confirmPassword\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> <ng-transclude></ng-transclude> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successResetPasswordTitle}}</h4> <p ng-bind=\"vm.loc.successResetPassword\"></p> <a ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
   );
 
 }]);

@@ -3,9 +3,10 @@
     function authRegisterDirective ($q, $timeout, $location, authService, authProvider) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
-                redirectUrl: "=",
-                loginUrl: "=",
+                redirectUrl: "@",
+                loginUrl: "@",
                 onSubmit: '&'
             },
             templateUrl: 'sds-angular-jwt/directives/auth-register-directive.html',
@@ -30,7 +31,7 @@
                             }
                         }
 
-                        $q.when($scope.onSubmit(vm.user)).then(function (){
+                        $q.when($scope.onSubmit()(vm.user)).then(function (){
                             if (!authService.authentication.isAuth){
                                 authService.login(vm.user).then(function () {
                                     vm.success = true;

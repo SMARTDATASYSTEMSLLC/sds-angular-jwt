@@ -3,9 +3,10 @@
     function authResetPasswordDirective ($q, $location, $timeout, authProvider) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
-                redirectUrl: "=",
-                loginUrl: "=",
+                redirectUrl: "@",
+                loginUrl: "@",
                 onSubmit: '&',
                 token: '='
             },
@@ -32,7 +33,7 @@
                             delete user.confirmPassword;
                             user.token = $scope.token;
 
-                            $q.when($scope.onSubmit(user)).then(function () {
+                            $q.when($scope.onSubmit()(user)).then(function () {
                                 vm.success = true;
                                 if($scope.redirectUrl) {
                                     $timeout(function (){

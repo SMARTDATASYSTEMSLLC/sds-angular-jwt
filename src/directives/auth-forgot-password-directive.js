@@ -3,9 +3,10 @@
     function authForgotPasswordDirective ($q, $location, $timeout, authProvider) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
-                redirectUrl: "=",
-                loginUrl: "=",
+                redirectUrl: "@",
+                loginUrl: "@",
                 onSubmit: '&'
             },
             templateUrl: 'sds-angular-jwt/directives/auth-forgot-password-directive.html',
@@ -23,7 +24,7 @@
                 vm.submit = function (form){
                     vm.message = "";
                     if (form.$valid) {
-                        $q.when($scope.onSubmit(vm.user)).then(function (){
+                        $q.when($scope.onSubmit()(vm.user)).then(function (){
                             vm.success = true;
                             if($scope.redirectUrl) {
                                 $timeout(function (){

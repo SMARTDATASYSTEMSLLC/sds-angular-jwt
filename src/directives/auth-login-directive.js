@@ -5,7 +5,7 @@
             restrict: 'EA',
             scope: {
                 // ater logging in, redirect to specific page
-                redirectUrl: "=",
+                redirectUrl: "@",
                 // or call a function
                 onLogin: '&?'
             },
