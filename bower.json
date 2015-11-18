@@ -1,0 +1,33 @@
+{
+  "name": "sds-angular-jwt",
+  "version": "0.5.0",
+  "homepage": "https://github.com/SMARTDATASYSTEMSLLC/sds-angular-controls",
+  "authors": [
+    "David Benson  <davidbenson86@gmail.com>",
+    "Steve Gentile <steven.gentile@gmail.com>"
+  ],
+  "description": "Angular Directives used with sds-angular generator",
+  "license": "MIT",
+  "main": [
+    "dist/sds-angular-jwt.js"
+  ],
+  "keywords": [
+    "angular",
+    "jwt",
+    "authentication"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "app/bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "~1",
+    "angular-jwt": "~0.0.7"
+  },
+  "devDependencies": {
+  }
+}
