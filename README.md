@@ -5,4 +5,6 @@ Angular Auth Control
 
 To Install this package:
 
-    bower install db-grid --save
+    bower install sds-angular-jwt --save
+    
+    npm install sds-angular-jwt --save
