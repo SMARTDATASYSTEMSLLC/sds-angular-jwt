@@ -24,7 +24,6 @@ push to GitHub
 
 git push origin master --tags
 
-npm publish
 
 npm publish
 
