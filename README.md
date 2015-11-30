@@ -18,7 +18,7 @@ git commit -am "Made some awesome new changes, now its even awesomer"
 
 tag the commit
 
-git tag -a v0.5.2 -m "Release version 0.5.2"
+git tag -a v0.5.3 -m "Release version 0.5.3"
 
 push to GitHub
 
