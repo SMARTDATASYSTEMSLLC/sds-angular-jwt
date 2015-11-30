@@ -19,7 +19,12 @@
                 self.authentication.isAuth = true;
                 self.authentication.token = response.token;
                 self.authentication.useRefreshToken = response.refresh_token || null;
-                self.authentication.data = jwtHelper.decodeToken(response.token);
+                var responseData = jwtHelper.decodeToken(response.token);
+                if(responseData.data){
+                    self.authentication.data = responseData.data;
+                }else{
+                    self.authentication.data = responseData
+                }
 
                 $rootScope.$broadcast("auth:userUpdate");
                 try {
@@ -110,7 +115,13 @@
             if ($window.localStorage.token) {
                 self.authentication.isAuth = true;
                 self.authentication.token = $window.localStorage.token;
-                self.authentication.data = jwtHelper.decodeToken($window.localStorage.token);
+
+                var responseData = jwtHelper.decodeToken($window.localStorage.token);
+                if(responseData.data){
+                    self.authentication.data = responseData.data;
+                }else{
+                    self.authentication.data = responseData
+                }
             }
         };
 
