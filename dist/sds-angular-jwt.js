@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.5.3 
+ * @version 0.5.4 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -298,7 +298,12 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 self.authentication.isAuth = true;
                 self.authentication.token = response.token || response.access_token;
                 self.authentication.useRefreshToken = response.refresh_token || null;
-                self.authentication.data = jwtHelper.decodeToken(self.authentication.token);
+                var responseData = jwtHelper.decodeToken(self.authentication.token);
+                if(responseData.data){
+                    self.authentication.data = responseData.data;
+                }else{
+                    self.authentication.data = responseData;
+                }
 
                 $rootScope.$broadcast("auth:userUpdate");
                 try {
@@ -389,7 +394,13 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             if ($window.localStorage.token) {
                 self.authentication.isAuth = true;
                 self.authentication.token = $window.localStorage.token;
-                self.authentication.data = jwtHelper.decodeToken($window.localStorage.token);
+
+                var responseData = jwtHelper.decodeToken($window.localStorage.token);
+                if(responseData.data){
+                    self.authentication.data = responseData.data;
+                }else{
+                    self.authentication.data = responseData;
+                }
             }
         };
 
