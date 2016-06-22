@@ -1,14 +1,15 @@
 (function (){
     'use strict';
 
-    function AuthProvider (){
+    function AuthConfigProvider (){
         var self = this;
 
         self.onLoadStart = function (){};
         self.onLoadEnd = function (){};
+        self.formatLoginParams = function (params){ return params;};
 
         self.permissionLookup = function(permission, user, params) {
-            if (!user){
+            if (!user || !user.roles){
                 return false;
             }
             if(user.su){
@@ -55,17 +56,22 @@
 
         };
 
-        self.$get = function() {
+        self.$get = function AuthConfig () {
             return {
                 onLoadStart: self.onLoadStart,
                 onLoadEnd: self.onLoadEnd,
                 permissionLookup: self.permissionLookup,
+                formatLoginParams: self.formatLoginParams,
                 tokenUrl: self.tokenUrl,
                 refreshUrl: self.refreshUrl,
                 loginUrl: self.loginUrl,
                 notFoundUrl: self.notFoundUrl,
                 localization: self.localization
             };
+        };
+
+        self.setFormatLoginParams = function (obj){
+            self.formatLoginParams = obj;
         };
 
         self.setRoutes = function (obj){
@@ -121,6 +127,6 @@
 
     }
 
-    angular.module('sds-angular-jwt').provider('authProvider',AuthProvider);
+    angular.module('sds-angular-jwt').provider('authConfig',AuthConfigProvider);
 
 })();

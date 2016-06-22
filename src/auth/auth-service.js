@@ -1,6 +1,6 @@
 (function (){
     'use strict';
-    function authService($injector, $q, $log, $timeout, $rootScope, jwtHelper, $window, authProvider) {
+    function authService($injector, $q, $log, $timeout, $rootScope, jwtHelper, $window, authConfig) {
         var self = {};
 
         var _clearLocalStorage = function(){
@@ -17,13 +17,13 @@
         var _processResponse = function(response){
             return $q(function(resolve, reject) {
                 self.authentication.isAuth = true;
-                self.authentication.token = response.token;
+                self.authentication.token = response.token || response.access_token;
                 self.authentication.useRefreshToken = response.refresh_token || null;
-                self.authentication.data = jwtHelper.decodeToken(response.token);
+                self.authentication.data = jwtHelper.decodeToken(self.authentication.token);
 
                 $rootScope.$broadcast("auth:userUpdate");
                 try {
-                    $window.localStorage.token = response.token;
+                    $window.localStorage.token = self.authentication.token;
                     return resolve(self.authentication);
                 } catch (err) {
                     _clearLocalStorage();
@@ -40,7 +40,7 @@
         };
 
         self.login = function (loginData) {
-            return $injector.get('$http').post(authProvider.tokenUrl, loginData)
+            return $injector.get('$http').post(authConfig.tokenUrl, $.param(authConfig.formatLoginParams(loginData)), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
                 .then(function (response) {
                     //decode the token to get the data we need:
                     return _processResponse(response.data);
@@ -75,34 +75,34 @@
         };
 
         self.deleteToken = function(){
-            var deleteTokenUri =  authProvider.tokenUrl + '/' + self.authentication.data.id;
+            var deleteTokenUri =  authConfig.tokenUrl + '/' + self.authentication.data.id;
             return $injector.get('$http').delete(deleteTokenUri);
         };
 
         self.allowed = function (permission, params){
-            return authProvider.permissionLookup(permission, self.authentication.data, params);
+            return authConfig.permissionLookup(permission, self.authentication.data, params);
         };
 
         self.refreshToken = function () {
             return $q(function(resolve, reject) {
                 if ($window.localStorage.token) {
                     var authData = jwtHelper.decodeToken($window.localStorage.token);
+                    if (authData && authData.useRefreshToken !== false) {
+                        $window.localStorage.removeItem('token');
 
-                    $window.localStorage.removeItem('token');
-
-                    return $injector.get('$http').post(authProvider.refreshUrl)
-                        .then(function (response) {
-                            return _processResponse(response.data).then(function(){
-                                return resolve();
+                        return $injector.get('$http').post(authConfig.refreshUrl)
+                            .then(function (response) {
+                                return _processResponse(response.data).then(function () {
+                                    return resolve();
+                                });
+                            }, function (err) {
+                                return self.logOut().then(function () {
+                                    reject(err);
+                                });
                             });
-                        }, function (err) {
-                            return self.logOut().then(function (){
-                                reject(err);
-                            });
-                        });
-                }else{
-                    return resolve();
+                    }
                 }
+                return resolve();
             });
         };
 

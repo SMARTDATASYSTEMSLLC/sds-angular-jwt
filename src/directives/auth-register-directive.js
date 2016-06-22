@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authRegisterDirective ($q, $timeout, $location, authService, authProvider) {
+    function authRegisterDirective ($q, $timeout, $location, authService, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -13,8 +13,8 @@
             link: function ($scope, $element, $attrs) {
                 var vm = {};
 
-                vm.loc = authProvider.localization;
-                vm.loginUrl = $scope.loginUrl || authProvider.loginUrl;
+                vm.loc = authConfig.localization;
+                vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
 
                 vm.user = {
                     email: null,

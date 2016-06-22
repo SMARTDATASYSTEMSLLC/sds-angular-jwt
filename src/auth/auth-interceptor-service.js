@@ -1,6 +1,6 @@
 (function (){
     'use strict';
-    function authInterceptorService($timeout, $q, $injector, $location, authProvider) {
+    function authInterceptorService($timeout, $q, $injector, $location, authConfig) {
         var authInterceptorServiceFactory = {};
 
         var _request = function (config) {
@@ -12,13 +12,13 @@
                 config.headers.Authorization = 'Bearer ' + authService.authentication.token;
             }
 
-            authProvider.onLoadStart();
+            authConfig.onLoadStart();
 
             return config;
         };
 
         var _response = function(response) {
-            authProvider.onLoadEnd({success: true});
+            authConfig.onLoadEnd({success: true});
             return response;
         };
 
@@ -40,19 +40,19 @@
                     authService.refreshToken().then(function (){
                         $location.reload();
                     }, function (){
-                        $location.path(authProvider.loginUrl);
+                        $location.path(authConfig.loginUrl);
                     });
                 }else{
                     authService.logOut();
-                    $location.path(authProvider.loginUrl);
+                    $location.path(authConfig.loginUrl);
                 }
             }
-            if(rejection.status === 404 && authProvider.notFoundUrl){
+            if(rejection.status === 404 && authConfig.notFoundUrl){
                 $timeout(function(){
-                    $location.path(authProvider.notFoundUrl);
+                    $location.path(authConfig.notFoundUrl);
                 }, 1000);
             }
-            authProvider.onLoadEnd({success: false, status: rejection.status, message: rejection.data && rejection.data.message, error: rejection.data && rejection.data.error});
+            authConfig.onLoadEnd({success: false, status: rejection.status, message: rejection.data && rejection.data.message, error: rejection.data && rejection.data.error});
             return $q.reject(rejection);
         };
 

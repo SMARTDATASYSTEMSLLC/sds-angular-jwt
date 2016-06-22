@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authLoginDirective ($location, authService, authProvider) {
+    function authLoginDirective ($location, authService, authConfig) {
         return {
             restrict: 'EA',
             scope: {
@@ -13,7 +13,7 @@
             link: function ($scope, $element, $attrs) {
                 var vm = {};
 
-                vm.loc = authProvider.localization;
+                vm.loc = authConfig.localization;
 
                 vm.user = {
                     email: null,

@@ -5,12 +5,12 @@
         $httpProvider.interceptors.push('authInterceptorService');
 
     })
-    .run(function($q, $location, $rootScope, authService, authProvider) {
-        var previousLocation = authProvider.loginUrl,
+    .run(function($q, $location, $rootScope, authService, authConfig) {
+        var previousLocation = authConfig.loginUrl,
             postLogInRoute;
 
 
-        function redirectNoAccess(newRoute, event){
+        function redirectNoAccess(event){
             //send back to wherever they came from
             event.preventDefault();
             if (previousLocation) {
@@ -18,11 +18,13 @@
             }
         }
 
-        function securityCheck(newRoute, event){
+        function securityCheck(newRoute, params, event){
             if(!authService.authentication.isAuth) {
-                if (newRoute && newRoute.$$route && newRoute.$$route.auth !== false) {
-                    postLogInRoute = $location.url();
-                    $location.path(authProvider.loginUrl).replace();
+                if (newRoute && newRoute.auth !== false) {
+                    if (!newRoute.redirectTo) {
+                        postLogInRoute = $location.url();
+                    }
+                    $location.path(authConfig.loginUrl).replace();
                 }
                 else {
                     $location.path($location.path());
@@ -31,15 +33,15 @@
                 $location.url(postLogInRoute);
                 postLogInRoute = null;
             } else {
-                if(newRoute && newRoute.$$route) {
+                if(newRoute) {
                     var hasAccess = true;
-                    if (typeof newRoute.$$route.auth === "string" && !authProvider.permissionLookup(newRoute.$$route.auth, authService.authentication.data,  newRoute.params)){
+                    if (typeof newRoute.auth === "string" && !authConfig.permissionLookup(newRoute.auth, authService.authentication.data,  params)){
                         hasAccess = false;
                         previousLocation = previousLocation || "/";
                     }
                     if (!hasAccess) {
-                        redirectNoAccess(newRoute, event);
-                    }else if (newRoute.$$route && newRoute.$$route.templateUrl) { //don't store a previous if not a view
+                        redirectNoAccess(event);
+                    }else if (newRoute && newRoute.templateUrl) { //don't store a previous if not a view
                         previousLocation = $location.url();
                     }
                 }
@@ -47,7 +49,13 @@
         }
 
         $rootScope.$on('$routeChangeStart', function (event, currRoute) {
-            securityCheck(currRoute, event);
+            if (currRoute) {
+                securityCheck(currRoute.$$route, currRoute.params, event);
+            }
+        });
+
+        $rootScope.$on('$stateChangeStart', function (event, toState, toParams) {
+            securityCheck(toState, toParams, event);
         });
 
         securityCheck(null, null);

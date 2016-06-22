@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authResetPasswordDirective ($q, $location, $timeout, authProvider) {
+    function authResetPasswordDirective ($q, $location, $timeout, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -14,8 +14,8 @@
             link: function ($scope, $element, $attrs) {
                 var vm = {};
 
-                vm.loc = authProvider.localization;
-                vm.loginUrl = $scope.loginUrl || authProvider.loginUrl;
+                vm.loc = authConfig.localization;
+                vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
 
                 vm.success = false;
                 vm.user = {
