@@ -3,6 +3,7 @@
     function authLoginDirective ($location, authService, authConfig) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
                 // ater logging in, redirect to specific page
                 redirectUrl: "@",

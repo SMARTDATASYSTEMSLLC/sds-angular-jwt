@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.5.5 
+ * @version 0.5.6 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -476,6 +476,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
     function authLoginDirective ($location, authService, authConfig) {
         return {
             restrict: 'EA',
+            transclude: true,
             scope: {
                 // ater logging in, redirect to specific page
                 redirectUrl: "@",
@@ -676,12 +677,12 @@ angular.module('sds-angular-jwt').run(['$templateCache', function($templateCache
 
 
   $templateCache.put('sds-angular-jwt/directives/auth-login-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.login\">Login</button> </form>"
+    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.login\">Login</button> <ng-transclude></ng-transclude> </form>"
   );
 
 
   $templateCache.put('sds-angular-jwt/directives/auth-register-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <ng-transclude></ng-transclude> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successRegisterTitle}}</h4> <p ng-bind=\"vm.loc.successRegister\"></p> <a ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
+    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> <ng-transclude></ng-transclude> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successRegisterTitle}}</h4> <p ng-bind=\"vm.loc.successRegister\"></p> <a ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
   );
 
 
