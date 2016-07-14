@@ -10,12 +10,13 @@
                 onSubmit: '&',
                 token: '='
             },
-            templateUrl: 'sds-angular-jwt/directives/auth-login-directive.html',
+            templateUrl: 'sds-angular-jwt/directives/auth-reset-password-directive.html',
             link: function ($scope, $element, $attrs) {
                 var vm = {};
 
                 vm.loc = authConfig.localization;
                 vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
+                vm.isLoginPage = $location.path() === vm.loginUrl;
 
                 vm.success = false;
                 vm.user = {

@@ -15,6 +15,7 @@
 
                 vm.loc = authConfig.localization;
                 vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
+                vm.isLoginPage = $location.path() === vm.loginUrl;
 
                 vm.user = {
                     email: null,
