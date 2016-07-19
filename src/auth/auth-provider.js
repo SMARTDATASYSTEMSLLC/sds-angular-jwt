@@ -103,7 +103,7 @@
         };
         self.setPermissionLookup = function (fn){
             if(typeof fn === "function"){
-                self.lookupPermission = fn;
+                self.permissionLookup = fn;
             }else{
                 throw new Error('Parameter must be a function');
             }
