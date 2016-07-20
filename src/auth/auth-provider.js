@@ -6,6 +6,7 @@
 
         self.onLoadStart = function (){};
         self.onLoadEnd = function (){};
+        self.formatAuthData = function (data){ return data; };
         self.formatLoginParams = function (params){ return params;};
 
         self.permissionLookup = function(permission, user, params) {
@@ -62,6 +63,7 @@
                 onLoadEnd: self.onLoadEnd,
                 permissionLookup: self.permissionLookup,
                 formatLoginParams: self.formatLoginParams,
+                formatAuthData: self.formatAuthData,
                 tokenUrl: self.tokenUrl,
                 refreshUrl: self.refreshUrl,
                 loginUrl: self.loginUrl,
@@ -72,6 +74,10 @@
 
         self.setFormatLoginParams = function (obj){
             self.formatLoginParams = obj;
+        };
+
+        self.setFormatAuthData = function (obj){
+            self.formatAuthData = obj;
         };
 
         self.setRoutes = function (obj){

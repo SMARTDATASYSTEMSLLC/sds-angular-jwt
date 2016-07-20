@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.5.8 
+ * @version 0.5.9 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -79,21 +79,26 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         var authInterceptorServiceFactory = {};
 
         var _request = function (config) {
-            var authService = $injector.get('authService');
+            if (!config.cache && config.url.slice(-5) !== '.html') {
 
-            config.headers = config.headers || {};
+                var authService = $injector.get('authService');
 
-            if (authService.authentication.isAuth) {
-                config.headers.Authorization = 'Bearer ' + authService.authentication.token;
+                config.headers = config.headers || {};
+
+                if (authService.authentication.isAuth) {
+                    config.headers.Authorization = 'Bearer ' + authService.authentication.token;
+                }
+
+                authConfig.onLoadStart({config: config});
+
             }
-
-            authConfig.onLoadStart();
-
             return config;
         };
 
         var _response = function(response) {
-            authConfig.onLoadEnd({success: true});
+            if (!response.config.cache && response.config.url.slice(-5) !== '.html') {
+                authConfig.onLoadEnd({success: true, config: response.config});
+            }
             return response;
         };
 
@@ -127,7 +132,16 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                     $location.path(authConfig.notFoundUrl);
                 }, 1000);
             }
-            authConfig.onLoadEnd({success: false, status: rejection.status, message: rejection.data && rejection.data.message, error: rejection.data && rejection.data.error});
+
+            if (!rejection.config.cache && rejection.config.url.slice(-5) !== '.html') {
+                authConfig.onLoadEnd({
+                    success: false,
+                    config: rejection.config,
+                    status: rejection.status,
+                    message: rejection.data && rejection.data.message,
+                    error: rejection.data && rejection.data.error
+                });
+            }
             return $q.reject(rejection);
         };
 
@@ -152,6 +166,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
         self.onLoadStart = function (){};
         self.onLoadEnd = function (){};
+        self.formatAuthData = function (data){ return data; };
         self.formatLoginParams = function (params){ return params;};
 
         self.permissionLookup = function(permission, user, params) {
@@ -208,6 +223,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 onLoadEnd: self.onLoadEnd,
                 permissionLookup: self.permissionLookup,
                 formatLoginParams: self.formatLoginParams,
+                formatAuthData: self.formatAuthData,
                 tokenUrl: self.tokenUrl,
                 refreshUrl: self.refreshUrl,
                 loginUrl: self.loginUrl,
@@ -218,6 +234,10 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
         self.setFormatLoginParams = function (obj){
             self.formatLoginParams = obj;
+        };
+
+        self.setFormatAuthData = function (obj){
+            self.formatAuthData = obj;
         };
 
         self.setRoutes = function (obj){
@@ -299,20 +319,28 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 self.authentication.token = response.token || response.access_token;
                 self.authentication.useRefreshToken = response.refresh_token || null;
                 var responseData = jwtHelper.decodeToken(self.authentication.token);
-                if(responseData.data){
-                    self.authentication.data = responseData.data;
-                }else{
-                    self.authentication.data = responseData;
-                }
 
-                $rootScope.$broadcast("auth:userUpdate");
+
                 try {
                     $window.localStorage.token = self.authentication.token;
-                    return resolve(self.authentication);
+
                 } catch (err) {
                     _clearLocalStorage();
                     return reject({message: 'This application does not support private browsing mode. Please turn off private browsing to log in.'});
                 }
+
+                $q
+                    .when(authConfig.formatAuthData(responseData.data || responseData))
+                    .then(function (data){
+
+
+                        self.authentication.data = data;
+                        $rootScope.$broadcast("auth:userUpdate");
+
+                        return resolve(self.authentication);
+
+                });
+
             });
         };
 
@@ -324,7 +352,11 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         };
 
         self.login = function (loginData) {
-            return $injector.get('$http').post(authConfig.tokenUrl, $.param(authConfig.formatLoginParams(loginData)), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+            return $q
+                .when(authConfig.formatLoginParams(loginData))
+                .then(function (formattedLoginData){
+                    return $injector.get('$http').post(authConfig.tokenUrl, $.param(formattedLoginData), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+                })
                 .then(function (response) {
                     //decode the token to get the data we need:
                     return _processResponse(response.data);
@@ -366,6 +398,8 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         self.allowed = function (permission, params){
             return authConfig.permissionLookup(permission, self.authentication.data, params);
         };
+
+        self.is = self.allowed;
 
         self.refreshToken = function () {
             return $q(function(resolve, reject) {
@@ -417,7 +451,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
 (function () {
     'use strict';
-    function authForgotPasswordDirective ($q, $location, $timeout, authConfig) {
+    function authForgotPasswordDirective ($q, $location, $timeout, $rootScope, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -442,7 +476,9 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 vm.submit = function (form){
                     vm.message = "";
                     if (form.$valid) {
+                        $rootScope.$broadcast("auth:submitStart");
                         $q.when($scope.onSubmit()(vm.user)).then(function (){
+                            $rootScope.$broadcast("auth:submitEnd");
                             vm.success = true;
                             if($scope.redirectUrl) {
                                 $timeout(function (){
@@ -450,6 +486,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                                 },3000);
                             }
                         }, function (err) {
+                            $rootScope.$broadcast("auth:submitEnd");
                             if(err.data && err.data.message) {
                                 vm.message = err.data.message;
                             }else if(err.message) {
@@ -465,7 +502,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             }
         };
     }
-    authForgotPasswordDirective.$inject = ["$q", "$location", "$timeout", "authConfig"];
+    authForgotPasswordDirective.$inject = ["$q", "$location", "$timeout", "$rootScope", "authConfig"];
 
     angular.module('sds-angular-jwt').directive('authForgotPassword', authForgotPasswordDirective);
 
@@ -474,7 +511,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
 (function () {
     'use strict';
-    function authLoginDirective ($location, authService, authConfig) {
+    function authLoginDirective ($location, $rootScope, authService, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -498,7 +535,9 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 vm.submit = function (form){
                     vm.message = "";
                     if (form.$valid) {
+                        $rootScope.$broadcast("auth:submitStart");
                         authService.login(vm.user).then(function () {
+                            $rootScope.$broadcast("auth:submitEnd");
                             if (authService.authentication.data) {
                                 if (typeof $scope.onLogin === 'function') {
                                     $scope.onLogin()(authService.authentication.data);
@@ -509,6 +548,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                                 vm.message = vm.loc.errorLogin;
                             }
                         }, function (err) {
+                            $rootScope.$broadcast("auth:submitEnd");
                             if(err.data && err.data.message){
                                 vm.message = err.data.message;
                             }else {
@@ -523,7 +563,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             }
         };
     }
-    authLoginDirective.$inject = ["$location", "authService", "authConfig"];
+    authLoginDirective.$inject = ["$location", "$rootScope", "authService", "authConfig"];
 
     angular.module('sds-angular-jwt').directive('authLogin', authLoginDirective);
 
@@ -532,7 +572,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
 (function () {
     'use strict';
-    function authRegisterDirective ($q, $timeout, $location, authService, authConfig) {
+    function authRegisterDirective ($q, $timeout, $location, $rootScope, authService, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -564,9 +604,10 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                             }
                         }
 
+                        $rootScope.$broadcast("auth:submitStart");
                         $q.when($scope.onSubmit()(vm.user)).then(function (){
                             if (!authService.authentication.isAuth){
-                                authService.login(vm.user).then(function () {
+                                return authService.login(vm.user).then(function () {
                                     vm.success = true;
                                     if($scope.redirectUrl) {
                                         $location.path($scope.redirectUrl);
@@ -580,15 +621,21 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                                     $location.path($scope.redirectUrl);
                                 },3000);
                             }
-                        }, function (err) {
-                            if(err.data && err.data.message) {
-                                vm.message = err.data.message;
-                            }else if(err.message) {
-                                vm.message = err.message;
-                            }else {
-                                vm.message = vm.loc.errorRegister;
+                        }).then(
+                            function (){
+                                $rootScope.$broadcast("auth:submitStart");
+                            },
+                            function (err) {
+                                $rootScope.$broadcast("auth:submitEnd");
+                                if(err.data && err.data.message) {
+                                    vm.message = err.data.message;
+                                }else if(err.message) {
+                                    vm.message = err.message;
+                                }else {
+                                    vm.message = vm.loc.errorRegister;
+                                }
                             }
-                        });
+                        );
                     }
                 };
 
@@ -597,7 +644,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             }
         };
     }
-    authRegisterDirective.$inject = ["$q", "$timeout", "$location", "authService", "authConfig"];
+    authRegisterDirective.$inject = ["$q", "$timeout", "$location", "$rootScope", "authService", "authConfig"];
 
     angular.module('sds-angular-jwt').directive('authRegister', authRegisterDirective);
 
@@ -606,7 +653,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
 (function () {
     'use strict';
-    function authResetPasswordDirective ($q, $location, $timeout, authConfig) {
+    function authResetPasswordDirective ($q, $location, $timeout, $rootScope, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -640,14 +687,17 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                             delete user.confirmPassword;
                             user.token = $scope.token;
 
+                            $rootScope.$broadcast("auth:submitStart");
                             $q.when($scope.onSubmit()(user)).then(function () {
                                 vm.success = true;
+                                $rootScope.$broadcast("auth:submitEnd");
                                 if($scope.redirectUrl) {
                                     $timeout(function (){
                                         $location.path($scope.redirectUrl);
                                     },3000);
                                 }
                             }, function (err) {
+                                $rootScope.$broadcast("auth:submitEnd");
                                 if (err.data && err.data.message) {
                                     vm.message = err.data.message;
                                 }else if(err.message) {
@@ -664,7 +714,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             }
         };
     }
-    authResetPasswordDirective.$inject = ["$q", "$location", "$timeout", "authConfig"];
+    authResetPasswordDirective.$inject = ["$q", "$location", "$timeout", "$rootScope", "authConfig"];
 
     angular.module('sds-angular-jwt').directive('authResetPassword', authResetPasswordDirective);
 

@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authLoginDirective ($location, authService, authConfig) {
+    function authLoginDirective ($location, $rootScope, authService, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -24,7 +24,9 @@
                 vm.submit = function (form){
                     vm.message = "";
                     if (form.$valid) {
+                        $rootScope.$broadcast("auth:submitStart");
                         authService.login(vm.user).then(function () {
+                            $rootScope.$broadcast("auth:submitEnd");
                             if (authService.authentication.data) {
                                 if (typeof $scope.onLogin === 'function') {
                                     $scope.onLogin()(authService.authentication.data);
@@ -35,6 +37,7 @@
                                 vm.message = vm.loc.errorLogin;
                             }
                         }, function (err) {
+                            $rootScope.$broadcast("auth:submitEnd");
                             if(err.data && err.data.message){
                                 vm.message = err.data.message;
                             }else {

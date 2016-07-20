@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authResetPasswordDirective ($q, $location, $timeout, authConfig) {
+    function authResetPasswordDirective ($q, $location, $timeout, $rootScope, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -34,14 +34,17 @@
                             delete user.confirmPassword;
                             user.token = $scope.token;
 
+                            $rootScope.$broadcast("auth:submitStart");
                             $q.when($scope.onSubmit()(user)).then(function () {
                                 vm.success = true;
+                                $rootScope.$broadcast("auth:submitEnd");
                                 if($scope.redirectUrl) {
                                     $timeout(function (){
                                         $location.path($scope.redirectUrl);
                                     },3000);
                                 }
                             }, function (err) {
+                                $rootScope.$broadcast("auth:submitEnd");
                                 if (err.data && err.data.message) {
                                     vm.message = err.data.message;
                                 }else if(err.message) {

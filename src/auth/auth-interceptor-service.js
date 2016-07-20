@@ -4,21 +4,26 @@
         var authInterceptorServiceFactory = {};
 
         var _request = function (config) {
-            var authService = $injector.get('authService');
+            if (!config.cache && config.url.slice(-5) !== '.html') {
 
-            config.headers = config.headers || {};
+                var authService = $injector.get('authService');
 
-            if (authService.authentication.isAuth) {
-                config.headers.Authorization = 'Bearer ' + authService.authentication.token;
+                config.headers = config.headers || {};
+
+                if (authService.authentication.isAuth) {
+                    config.headers.Authorization = 'Bearer ' + authService.authentication.token;
+                }
+
+                authConfig.onLoadStart({config: config});
+
             }
-
-            authConfig.onLoadStart();
-
             return config;
         };
 
         var _response = function(response) {
-            authConfig.onLoadEnd({success: true});
+            if (!response.config.cache && response.config.url.slice(-5) !== '.html') {
+                authConfig.onLoadEnd({success: true, config: response.config});
+            }
             return response;
         };
 
@@ -52,7 +57,16 @@
                     $location.path(authConfig.notFoundUrl);
                 }, 1000);
             }
-            authConfig.onLoadEnd({success: false, status: rejection.status, message: rejection.data && rejection.data.message, error: rejection.data && rejection.data.error});
+
+            if (!rejection.config.cache && rejection.config.url.slice(-5) !== '.html') {
+                authConfig.onLoadEnd({
+                    success: false,
+                    config: rejection.config,
+                    status: rejection.status,
+                    message: rejection.data && rejection.data.message,
+                    error: rejection.data && rejection.data.error
+                });
+            }
             return $q.reject(rejection);
         };
 

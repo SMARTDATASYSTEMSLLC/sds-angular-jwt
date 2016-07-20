@@ -20,20 +20,28 @@
                 self.authentication.token = response.token || response.access_token;
                 self.authentication.useRefreshToken = response.refresh_token || null;
                 var responseData = jwtHelper.decodeToken(self.authentication.token);
-                if(responseData.data){
-                    self.authentication.data = responseData.data;
-                }else{
-                    self.authentication.data = responseData;
-                }
 
-                $rootScope.$broadcast("auth:userUpdate");
+
                 try {
                     $window.localStorage.token = self.authentication.token;
-                    return resolve(self.authentication);
+
                 } catch (err) {
                     _clearLocalStorage();
                     return reject({message: 'This application does not support private browsing mode. Please turn off private browsing to log in.'});
                 }
+
+                $q
+                    .when(authConfig.formatAuthData(responseData.data || responseData))
+                    .then(function (data){
+
+
+                        self.authentication.data = data;
+                        $rootScope.$broadcast("auth:userUpdate");
+
+                        return resolve(self.authentication);
+
+                });
+
             });
         };
 
@@ -45,7 +53,11 @@
         };
 
         self.login = function (loginData) {
-            return $injector.get('$http').post(authConfig.tokenUrl, $.param(authConfig.formatLoginParams(loginData)), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+            return $q
+                .when(authConfig.formatLoginParams(loginData))
+                .then(function (formattedLoginData){
+                    return $injector.get('$http').post(authConfig.tokenUrl, $.param(formattedLoginData), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+                })
                 .then(function (response) {
                     //decode the token to get the data we need:
                     return _processResponse(response.data);
@@ -87,6 +99,8 @@
         self.allowed = function (permission, params){
             return authConfig.permissionLookup(permission, self.authentication.data, params);
         };
+
+        self.is = self.allowed;
 
         self.refreshToken = function () {
             return $q(function(resolve, reject) {

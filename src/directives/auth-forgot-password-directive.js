@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authForgotPasswordDirective ($q, $location, $timeout, authConfig) {
+    function authForgotPasswordDirective ($q, $location, $timeout, $rootScope, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -25,7 +25,9 @@
                 vm.submit = function (form){
                     vm.message = "";
                     if (form.$valid) {
+                        $rootScope.$broadcast("auth:submitStart");
                         $q.when($scope.onSubmit()(vm.user)).then(function (){
+                            $rootScope.$broadcast("auth:submitEnd");
                             vm.success = true;
                             if($scope.redirectUrl) {
                                 $timeout(function (){
@@ -33,6 +35,7 @@
                                 },3000);
                             }
                         }, function (err) {
+                            $rootScope.$broadcast("auth:submitEnd");
                             if(err.data && err.data.message) {
                                 vm.message = err.data.message;
                             }else if(err.message) {

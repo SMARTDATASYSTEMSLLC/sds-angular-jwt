@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    function authRegisterDirective ($q, $timeout, $location, authService, authConfig) {
+    function authRegisterDirective ($q, $timeout, $location, $rootScope, authService, authConfig) {
         return {
             restrict: 'EA',
             transclude: true,
@@ -32,9 +32,10 @@
                             }
                         }
 
+                        $rootScope.$broadcast("auth:submitStart");
                         $q.when($scope.onSubmit()(vm.user)).then(function (){
                             if (!authService.authentication.isAuth){
-                                authService.login(vm.user).then(function () {
+                                return authService.login(vm.user).then(function () {
                                     vm.success = true;
                                     if($scope.redirectUrl) {
                                         $location.path($scope.redirectUrl);
@@ -48,15 +49,21 @@
                                     $location.path($scope.redirectUrl);
                                 },3000);
                             }
-                        }, function (err) {
-                            if(err.data && err.data.message) {
-                                vm.message = err.data.message;
-                            }else if(err.message) {
-                                vm.message = err.message;
-                            }else {
-                                vm.message = vm.loc.errorRegister;
+                        }).then(
+                            function (){
+                                $rootScope.$broadcast("auth:submitStart");
+                            },
+                            function (err) {
+                                $rootScope.$broadcast("auth:submitEnd");
+                                if(err.data && err.data.message) {
+                                    vm.message = err.data.message;
+                                }else if(err.message) {
+                                    vm.message = err.message;
+                                }else {
+                                    vm.message = vm.loc.errorRegister;
+                                }
                             }
-                        });
+                        );
                     }
                 };
 
