@@ -1,6 +1,6 @@
 {
   "name": "sds-angular-jwt",
-  "version": "0.5.9",
+  "version": "0.6.0",
   "homepage": "https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt",
   "main": "index.js",
   "authors": [

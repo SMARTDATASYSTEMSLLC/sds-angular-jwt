@@ -25,7 +25,7 @@
                     vm.message = "";
                     if (form.$valid) {
                         $rootScope.$broadcast("auth:submitStart");
-                        authService.login(vm.user).then(function () {
+                        authService.login(vm.user.email, vm.user.password).then(function () {
                             $rootScope.$broadcast("auth:submitEnd");
                             if (authService.authentication.data) {
                                 if (typeof $scope.onLogin === 'function') {

@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.5.9 
+ * @version 0.6.0 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -167,7 +167,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         self.onLoadStart = function (){};
         self.onLoadEnd = function (){};
         self.formatAuthData = function (data){ return data; };
-        self.formatLoginParams = function (params){ return params;};
+        self.formatLoginParams = function (email, password){ return {email: email, password: password};};
 
         self.permissionLookup = function(permission, user, params) {
             if (!user || !user.roles){
@@ -351,9 +351,9 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             token: null
         };
 
-        self.login = function (loginData) {
+        self.login = function () {
             return $q
-                .when(authConfig.formatLoginParams(loginData))
+                .when(authConfig.formatLoginParams.apply(this, arguments))
                 .then(function (formattedLoginData){
                     return $injector.get('$http').post(authConfig.tokenUrl, $.param(formattedLoginData), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
                 })
@@ -536,7 +536,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                     vm.message = "";
                     if (form.$valid) {
                         $rootScope.$broadcast("auth:submitStart");
-                        authService.login(vm.user).then(function () {
+                        authService.login(vm.user.email, vm.user.password).then(function () {
                             $rootScope.$broadcast("auth:submitEnd");
                             if (authService.authentication.data) {
                                 if (typeof $scope.onLogin === 'function') {
@@ -607,7 +607,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                         $rootScope.$broadcast("auth:submitStart");
                         $q.when($scope.onSubmit()(vm.user)).then(function (){
                             if (!authService.authentication.isAuth){
-                                return authService.login(vm.user).then(function () {
+                                return authService.login(vm.user.email, vm.user.password).then(function () {
                                     vm.success = true;
                                     if($scope.redirectUrl) {
                                         $location.path($scope.redirectUrl);

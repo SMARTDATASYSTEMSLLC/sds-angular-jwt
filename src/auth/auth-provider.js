@@ -7,7 +7,7 @@
         self.onLoadStart = function (){};
         self.onLoadEnd = function (){};
         self.formatAuthData = function (data){ return data; };
-        self.formatLoginParams = function (params){ return params;};
+        self.formatLoginParams = function (email, password){ return {email: email, password: password};};
 
         self.permissionLookup = function(permission, user, params) {
             if (!user || !user.roles){

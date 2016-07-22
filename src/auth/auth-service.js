@@ -52,9 +52,9 @@
             token: null
         };
 
-        self.login = function (loginData) {
+        self.login = function () {
             return $q
-                .when(authConfig.formatLoginParams(loginData))
+                .when(authConfig.formatLoginParams.apply(this, arguments))
                 .then(function (formattedLoginData){
                     return $injector.get('$http').post(authConfig.tokenUrl, $.param(formattedLoginData), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
                 })

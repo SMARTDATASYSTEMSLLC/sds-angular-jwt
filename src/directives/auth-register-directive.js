@@ -35,7 +35,7 @@
                         $rootScope.$broadcast("auth:submitStart");
                         $q.when($scope.onSubmit()(vm.user)).then(function (){
                             if (!authService.authentication.isAuth){
-                                return authService.login(vm.user).then(function () {
+                                return authService.login(vm.user.email, vm.user.password).then(function () {
                                     vm.success = true;
                                     if($scope.redirectUrl) {
                                         $location.path($scope.redirectUrl);
