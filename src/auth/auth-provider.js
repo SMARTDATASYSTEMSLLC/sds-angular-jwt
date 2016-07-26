@@ -53,6 +53,7 @@
             login: 'Login',
             email: 'Email Address',
             password: 'Password',
+            newPassword: 'New Password',
             confirm: 'Confirm Password'
 
         };

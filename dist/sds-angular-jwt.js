@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.6.0 
+ * @version 0.6.1 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -213,6 +213,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             login: 'Login',
             email: 'Email Address',
             password: 'Password',
+            newPassword: 'New Password',
             confirm: 'Confirm Password'
 
         };
@@ -451,272 +452,255 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
 (function () {
     'use strict';
-    function authForgotPasswordDirective ($q, $location, $timeout, $rootScope, authConfig) {
-        return {
-            restrict: 'EA',
-            transclude: true,
-            scope: {
-                redirectUrl: "@",
-                loginUrl: "@",
-                onSubmit: '&'
-            },
-            templateUrl: 'sds-angular-jwt/directives/auth-forgot-password-directive.html',
-            link: function ($scope, $element, $attrs) {
-                var vm = {};
+    function AuthForgotPasswordComponent($q, $location, $timeout, $rootScope, authConfig) {
 
-                vm.loc = authConfig.localization;
-                vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
-                vm.isLoginPage = $location.path() === vm.loginUrl;
+        var $ctrl = this;
 
-                vm.success = false;
-                vm.user = {
-                    email: null
-                };
+        $ctrl.loc = authConfig.localization;
+        $ctrl.loginUrl = $ctrl.loginUrl || authConfig.loginUrl;
+        $ctrl.isLoginPage = $location.path() === $ctrl.loginUrl;
 
-                vm.submit = function (form){
-                    vm.message = "";
-                    if (form.$valid) {
-                        $rootScope.$broadcast("auth:submitStart");
-                        $q.when($scope.onSubmit()(vm.user)).then(function (){
-                            $rootScope.$broadcast("auth:submitEnd");
-                            vm.success = true;
-                            if($scope.redirectUrl) {
-                                $timeout(function (){
-                                    $location.path($scope.redirectUrl);
-                                },3000);
-                            }
-                        }, function (err) {
-                            $rootScope.$broadcast("auth:submitEnd");
-                            if(err.data && err.data.message) {
-                                vm.message = err.data.message;
-                            }else if(err.message) {
-                                vm.message = err.message;
-                            }else {
-                                vm.message = vm.loc.errorForgotPassword;
+        $ctrl.success = false;
+        $ctrl.user = {
+            email: null
+        };
+
+        $ctrl.submit = function (form) {
+            $ctrl.message = "";
+            if (form.$valid) {
+                $rootScope.$broadcast("auth:submitStart");
+                $q.when($ctrl.onSubmit({user: $ctrl.user, form: form})).then(function () {
+                    $rootScope.$broadcast("auth:submitEnd");
+                    $ctrl.success = true;
+                    if ($ctrl.redirectUrl) {
+                        $timeout(function () {
+                            $location.path($ctrl.redirectUrl);
+                        }, 3000);
+                    }
+                }, function (err) {
+                    $rootScope.$broadcast("auth:submitEnd");
+                    if (err.data && err.data.message) {
+                        $ctrl.message = err.data.message;
+                    } else if (err.message) {
+                        $ctrl.message = err.message;
+                    } else {
+                        $ctrl.message = $ctrl.loc.errorForgotPassword;
+                    }
+                });
+            }
+        };
+    }
+
+    angular.module('sds-angular-jwt').component('authForgotPassword', {
+        templateUrl: 'sds-angular-jwt/directives/auth-forgot-password-component.html',
+        controller: AuthForgotPasswordComponent,
+        transclude: true,
+        bindings: {
+            redirectUrl: "@",
+            loginUrl: "@",
+            onSubmit: '&'
+        }
+    });
+
+})();
+
+
+(function () {
+    'use strict';
+    function AuthLoginComponent($location, $rootScope, authService, authConfig) {
+
+        var $ctrl = this;
+
+        $ctrl.loc = authConfig.localization;
+
+        $ctrl.user = {
+            email: null,
+            password: null
+        };
+
+        $ctrl.submit = function (form) {
+            $ctrl.message = "";
+            if (form.$valid) {
+                $rootScope.$broadcast("auth:submitStart");
+                authService.login($ctrl.user.email, $ctrl.user.password).then(function () {
+                    $rootScope.$broadcast("auth:submitEnd");
+                    if (authService.authentication.data) {
+                        if (typeof $ctrl.onLogin === 'function') {
+                            $ctrl.onLogin({auth: authService.authentication.data});
+                        } else {
+                            $location.path($ctrl.redirectUrl);
+                        }
+                    } else {
+                        $ctrl.message = $ctrl.loc.errorLogin;
+                    }
+                }, function (err) {
+                    $rootScope.$broadcast("auth:submitEnd");
+                    if (err.data && err.data.message) {
+                        $ctrl.message = err.data.message;
+                    } else {
+                        $ctrl.message = $ctrl.loc.errorLoginRejected;
+                    }
+                });
+            }
+        };
+    }
+
+    angular.module('sds-angular-jwt').component('authLogin', {
+        templateUrl: 'sds-angular-jwt/directives/auth-login-component.html',
+        controller: AuthLoginComponent,
+        transclude: true,
+        bindings: {
+            // after logging in, redirect to specific page
+            redirectUrl: "@",
+            // or call a function
+            onLogin: '&?'
+        }
+    });
+
+})();
+
+
+(function () {
+    'use strict';
+    function AuthRegisterComponent($q, $timeout, $location, $rootScope, authService, authConfig) {
+        var $ctrl = this;
+
+        $ctrl.loc = authConfig.localization;
+        $ctrl.loginUrl = $ctrl.loginUrl || authConfig.loginUrl;
+        $ctrl.isLoginPage = $location.path() === $ctrl.loginUrl;
+
+        $ctrl.user = {
+            email: null,
+            password: null
+        };
+
+        $ctrl.submit = function (form) {
+            $ctrl.message = "";
+            if (form.$valid) {
+
+                for (var key in form) {
+                    if (form.hasOwnProperty(key) && key[0] !== '$') {
+                        $ctrl.user[key] = form[key].$modelValue;
+                    }
+                }
+
+                $rootScope.$broadcast("auth:submitStart");
+                $q.when($ctrl.onSubmit({user: $ctrl.user, form: form})).then(function () {
+                    if (!authService.authentication.isAuth) {
+                        return authService.login($ctrl.user.email, $ctrl.user.password).then(function () {
+                            $ctrl.success = true;
+                            if ($ctrl.redirectUrl) {
+                                $location.path($ctrl.redirectUrl);
                             }
                         });
                     }
-                };
 
-                $scope.vm = vm;
-            }
-        };
-    }
-    authForgotPasswordDirective.$inject = ["$q", "$location", "$timeout", "$rootScope", "authConfig"];
-
-    angular.module('sds-angular-jwt').directive('authForgotPassword', authForgotPasswordDirective);
-
-})();
-
-
-(function () {
-    'use strict';
-    function authLoginDirective ($location, $rootScope, authService, authConfig) {
-        return {
-            restrict: 'EA',
-            transclude: true,
-            scope: {
-                // after logging in, redirect to specific page
-                redirectUrl: "@",
-                // or call a function
-                onLogin: '&?'
-            },
-            templateUrl: 'sds-angular-jwt/directives/auth-login-directive.html',
-            link: function ($scope, $element, $attrs) {
-                var vm = {};
-
-                vm.loc = authConfig.localization;
-
-                vm.user = {
-                    email: null,
-                    password: null
-                };
-
-                vm.submit = function (form){
-                    vm.message = "";
-                    if (form.$valid) {
-                        $rootScope.$broadcast("auth:submitStart");
-                        authService.login(vm.user.email, vm.user.password).then(function () {
-                            $rootScope.$broadcast("auth:submitEnd");
-                            if (authService.authentication.data) {
-                                if (typeof $scope.onLogin === 'function') {
-                                    $scope.onLogin()(authService.authentication.data);
-                                }else {
-                                    $location.path($scope.redirectUrl);
-                                }
-                            }else{
-                                vm.message = vm.loc.errorLogin;
-                            }
-                        }, function (err) {
-                            $rootScope.$broadcast("auth:submitEnd");
-                            if(err.data && err.data.message){
-                                vm.message = err.data.message;
-                            }else {
-                                vm.message = vm.loc.errorLoginRejected;
-                            }
-                        });
+                    $ctrl.success = true;
+                    if ($ctrl.redirectUrl) {
+                        $timeout(function () {
+                            $location.path($ctrl.redirectUrl);
+                        }, 3000);
                     }
-                };
-
-
-                $scope.vm = vm;
-            }
-        };
-    }
-    authLoginDirective.$inject = ["$location", "$rootScope", "authService", "authConfig"];
-
-    angular.module('sds-angular-jwt').directive('authLogin', authLoginDirective);
-
-})();
-
-
-(function () {
-    'use strict';
-    function authRegisterDirective ($q, $timeout, $location, $rootScope, authService, authConfig) {
-        return {
-            restrict: 'EA',
-            transclude: true,
-            scope: {
-                redirectUrl: "@",
-                loginUrl: "@",
-                onSubmit: '&'
-            },
-            templateUrl: 'sds-angular-jwt/directives/auth-register-directive.html',
-            link: function ($scope, $element, $attrs) {
-                var vm = {};
-
-                vm.loc = authConfig.localization;
-                vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
-                vm.isLoginPage = $location.path() === vm.loginUrl;
-
-                vm.user = {
-                    email: null,
-                    password: null
-                };
-
-                vm.submit = function (form){
-                    vm.message = "";
-                    if (form.$valid) {
-
-                        for(var key in form) {
-                            if(form.hasOwnProperty(key) && key[0] !== '$') {
-                                vm.user[key] = form[key].$modelValue;
-                            }
-                        }
-
+                }).then(
+                    function () {
                         $rootScope.$broadcast("auth:submitStart");
-                        $q.when($scope.onSubmit()(vm.user)).then(function (){
-                            if (!authService.authentication.isAuth){
-                                return authService.login(vm.user.email, vm.user.password).then(function () {
-                                    vm.success = true;
-                                    if($scope.redirectUrl) {
-                                        $location.path($scope.redirectUrl);
-                                    }
-                                });
-                            }
-
-                            vm.success = true;
-                            if($scope.redirectUrl) {
-                                $timeout(function (){
-                                    $location.path($scope.redirectUrl);
-                                },3000);
-                            }
-                        }).then(
-                            function (){
-                                $rootScope.$broadcast("auth:submitStart");
-                            },
-                            function (err) {
-                                $rootScope.$broadcast("auth:submitEnd");
-                                if(err.data && err.data.message) {
-                                    vm.message = err.data.message;
-                                }else if(err.message) {
-                                    vm.message = err.message;
-                                }else {
-                                    vm.message = vm.loc.errorRegister;
-                                }
-                            }
-                        );
-                    }
-                };
-
-
-                $scope.vm = vm;
-            }
-        };
-    }
-    authRegisterDirective.$inject = ["$q", "$timeout", "$location", "$rootScope", "authService", "authConfig"];
-
-    angular.module('sds-angular-jwt').directive('authRegister', authRegisterDirective);
-
-})();
-
-
-(function () {
-    'use strict';
-    function authResetPasswordDirective ($q, $location, $timeout, $rootScope, authConfig) {
-        return {
-            restrict: 'EA',
-            transclude: true,
-            scope: {
-                redirectUrl: "@",
-                loginUrl: "@",
-                onSubmit: '&',
-                token: '='
-            },
-            templateUrl: 'sds-angular-jwt/directives/auth-reset-password-directive.html',
-            link: function ($scope, $element, $attrs) {
-                var vm = {};
-
-                vm.loc = authConfig.localization;
-                vm.loginUrl = $scope.loginUrl || authConfig.loginUrl;
-                vm.isLoginPage = $location.path() === vm.loginUrl;
-
-                vm.success = false;
-                vm.user = {
-                    password: null,
-                    confirmPassword: null
-                };
-
-                vm.submit = function (form){
-                    vm.message = "";
-                    if (form.$valid) {
-                        if (vm.user.password !== vm.user.confirmPassword){
-                            vm.message = vm.loc.errorPasswordMatch;
-                        }else {
-                            var user = angular.copy(vm.user);
-                            delete user.confirmPassword;
-                            user.token = $scope.token;
-
-                            $rootScope.$broadcast("auth:submitStart");
-                            $q.when($scope.onSubmit()(user)).then(function () {
-                                vm.success = true;
-                                $rootScope.$broadcast("auth:submitEnd");
-                                if($scope.redirectUrl) {
-                                    $timeout(function (){
-                                        $location.path($scope.redirectUrl);
-                                    },3000);
-                                }
-                            }, function (err) {
-                                $rootScope.$broadcast("auth:submitEnd");
-                                if (err.data && err.data.message) {
-                                    vm.message = err.data.message;
-                                }else if(err.message) {
-                                    vm.message = err.message;
-                                } else {
-                                    vm.message = vm.loc.errorResetPassword;
-                                }
-                            });
+                    },
+                    function (err) {
+                        $rootScope.$broadcast("auth:submitEnd");
+                        if (err.data && err.data.message) {
+                            $ctrl.message = err.data.message;
+                        } else if (err.message) {
+                            $ctrl.message = err.message;
+                        } else {
+                            $ctrl.message = $ctrl.loc.errorRegister;
                         }
                     }
-                };
-
-                $scope.vm = vm;
+                );
             }
         };
     }
-    authResetPasswordDirective.$inject = ["$q", "$location", "$timeout", "$rootScope", "authConfig"];
 
-    angular.module('sds-angular-jwt').directive('authResetPassword', authResetPasswordDirective);
+
+    angular.module('sds-angular-jwt').component('authRegister', {
+        templateUrl: 'sds-angular-jwt/directives/auth-register-component.html',
+        controller: AuthRegisterComponent,
+        transclude: true,
+        bindings: {
+            redirectUrl: "@",
+            loginUrl: "@",
+            onSubmit: '&'
+        }
+    });
+
+})();
+
+
+(function () {
+    'use strict';
+    function AuthResetPasswordComponent($q, $location, $timeout, $rootScope, authConfig) {
+        var $ctrl = this;
+
+        $ctrl.loc = authConfig.localization;
+        $ctrl.loginUrl = $ctrl.loginUrl || authConfig.loginUrl;
+        $ctrl.isLoginPage = $location.path() === $ctrl.loginUrl;
+
+        $ctrl.success = false;
+        $ctrl.user = {
+            password: null,
+            confirmPassword: null
+        };
+
+        $ctrl.submit = function (form) {
+            $ctrl.message = "";
+            if (form.$valid) {
+                if ($ctrl.user.password !== $ctrl.user.confirmPassword) {
+                    $ctrl.message = $ctrl.loc.errorPasswordMatch;
+                } else {
+                    var user = angular.copy($ctrl.user);
+                    delete user.confirmPassword;
+                    user.token = $ctrl.token;
+
+                    for (var key in form) {
+                        if (form.hasOwnProperty(key) && key[0] !== '$') {
+                            user[key] = form[key].$modelValue;
+                        }
+                    }
+
+                    $rootScope.$broadcast("auth:submitStart");
+                    $q.when($ctrl.onSubmit({user: user, form: form})).then(function () {
+                        $ctrl.success = true;
+                        $rootScope.$broadcast("auth:submitEnd");
+                        if ($ctrl.redirectUrl) {
+                            $timeout(function () {
+                                $location.path($ctrl.redirectUrl);
+                            }, 3000);
+                        }
+                    }, function (err) {
+                        $rootScope.$broadcast("auth:submitEnd");
+                        if (err.data && err.data.message) {
+                            $ctrl.message = err.data.message;
+                        } else if (err.message) {
+                            $ctrl.message = err.message;
+                        } else {
+                            $ctrl.message = $ctrl.loc.errorResetPassword;
+                        }
+                    });
+                }
+            }
+        };
+    }
+
+    angular.module('sds-angular-jwt').component('authResetPassword', {
+        templateUrl: 'sds-angular-jwt/directives/auth-reset-password-component.html',
+        controller: AuthResetPasswordComponent,
+        transclude: true,
+        bindings: {
+            redirectUrl: "@",
+            loginUrl: "@",
+            onSubmit: '&',
+            token: '<'
+        }
+    });
 
 })();
 
@@ -724,23 +708,23 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 angular.module('sds-angular-jwt').run(['$templateCache', function($templateCache) {
   'use strict';
 
-  $templateCache.put('sds-angular-jwt/directives/auth-forgot-password-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> </div> <p ng-bind=\"vm.loc.forgotPasswordText\"></p> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> <ng-transclude></ng-transclude> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successForgotPasswordTitle}}</h4> <p ng-bind=\"vm.loc.successForgotPassword\"></p> <a ng-if=\"!vm.isLoginPage\" ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
+  $templateCache.put('sds-angular-jwt/directives/auth-forgot-password-component.html',
+    "<form name=\"authForm\" ng-submit=\"$ctrl.submit(authForm)\" novalidate> <div ng-if=\"!$ctrl.success\"> <div class=\"alert alert-danger\" ng-if=\"$ctrl.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{$ctrl.loc.errorTitle}}</h4> {{$ctrl.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"$ctrl.loc.errorEmail\"></div> </div> <p ng-bind=\"$ctrl.loc.forgotPasswordText\"></p> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{$ctrl.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"$ctrl.user.email\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"$ctrl.loc.submit\"></button> <ng-transclude></ng-transclude> </div> <div class=\"alert alert-success\" ng-if=\"$ctrl.success\"> <h4><i class=\"icon fa fa-check\"></i> {{$ctrl.loc.successForgotPasswordTitle}}</h4> <p ng-bind=\"$ctrl.loc.successForgotPassword\"></p> <a ng-if=\"!$ctrl.isLoginPage\" ng-href=\"{{$ctrl.loginUrl}}\" ng-bind=\"$ctrl.loc.loginPage\"></a> </div> </form>"
   );
 
 
-  $templateCache.put('sds-angular-jwt/directives/auth-login-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.login\">Login</button> <ng-transclude></ng-transclude> </form>"
+  $templateCache.put('sds-angular-jwt/directives/auth-login-component.html',
+    "<form name=\"authForm\" ng-submit=\"$ctrl.submit(authForm)\" novalidate> <div class=\"alert alert-danger\" ng-if=\"$ctrl.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{$ctrl.loc.errorTitle}}</h4> {{$ctrl.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"$ctrl.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"$ctrl.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{$ctrl.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"$ctrl.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{$ctrl.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"$ctrl.user.password\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"$ctrl.loc.login\">Login</button> <ng-transclude></ng-transclude> </form>"
   );
 
 
-  $templateCache.put('sds-angular-jwt/directives/auth-register-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"vm.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{vm.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"vm.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <ng-transclude></ng-transclude> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successRegisterTitle}}</h4> <p ng-bind=\"vm.loc.successRegister\"></p> <a ng-if=\"!vm.isLoginPage\" ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
+  $templateCache.put('sds-angular-jwt/directives/auth-register-component.html',
+    "<form name=\"authForm\" ng-submit=\"$ctrl.submit(authForm)\" novalidate> <div ng-if=\"!$ctrl.success\"> <div class=\"alert alert-danger\" ng-if=\"$ctrl.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{$ctrl.loc.errorTitle}}</h4> {{$ctrl.message}} <div ng-show=\"authForm.email.$error.email || authForm.email.$error.required\" ng-bind=\"$ctrl.loc.errorEmail\"></div> <div ng-show=\"authForm.password.$error.required\" ng-bind=\"$ctrl.loc.errorPassword\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"email\">{{$ctrl.loc.email}} * </label> <input class=\"form-control\" type=\"email\" name=\"email\" id=\"email\" ng-model=\"$ctrl.user.email\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{$ctrl.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"$ctrl.user.password\" required> </div> <ng-transclude></ng-transclude> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"$ctrl.loc.submit\"></button> </div> <div class=\"alert alert-success\" ng-if=\"$ctrl.success\"> <h4><i class=\"icon fa fa-check\"></i> {{$ctrl.loc.successRegisterTitle}}</h4> <p ng-bind=\"$ctrl.loc.successRegister\"></p> <a ng-if=\"!$ctrl.isLoginPage\" ng-href=\"{{$ctrl.loginUrl}}\" ng-bind=\"$ctrl.loc.loginPage\"></a> </div> </form>"
   );
 
 
-  $templateCache.put('sds-angular-jwt/directives/auth-reset-password-directive.html',
-    "<form name=\"authForm\" ng-submit=\"vm.submit(authForm)\" novalidate> <div ng-if=\"!vm.success\"> <div class=\"alert alert-danger\" ng-if=\"vm.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{vm.loc.errorTitle}}</h4> {{vm.message}} <div ng-show=\"authForm.password.$error.required\" ng-bind=\"vm.loc.errorPassword\"></div> <div ng-show=\"authForm.confirmPassword.$error.required\" ng-bind=\"vm.loc.errorConfirm\"></div> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{vm.loc.password}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"vm.user.password\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"confirmPassword\">{{vm.loc.confirm}} *</label> <input class=\"form-control\" type=\"password\" name=\"confirmPassword\" id=\"confirmPassword\" ng-model=\"vm.user.confirmPassword\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"vm.loc.submit\"></button> <ng-transclude></ng-transclude> </div> <div class=\"alert alert-success\" ng-if=\"vm.success\"> <h4><i class=\"icon fa fa-check\"></i> {{vm.loc.successResetPasswordTitle}}</h4> <p ng-bind=\"vm.loc.successResetPassword\"></p> <a ng-if=\"!vm.isLoginPage\" ng-href=\"{{vm.loginUrl}}\" ng-bind=\"vm.loc.loginPage\"></a> </div> </form>"
+  $templateCache.put('sds-angular-jwt/directives/auth-reset-password-component.html',
+    "<form name=\"authForm\" ng-submit=\"$ctrl.submit(authForm)\" novalidate> <div ng-if=\"!$ctrl.success\"> <div class=\"alert alert-danger\" ng-if=\"$ctrl.message || (authForm.$invalid && authForm.$submitted)\"> <h4><i class=\"icon fa fa-warning\"></i> {{$ctrl.loc.errorTitle}}</h4> {{$ctrl.message}} <div ng-show=\"authForm.password.$error.required\" ng-bind=\"$ctrl.loc.errorPassword\"></div> <div ng-show=\"authForm.confirmPassword.$error.required\" ng-bind=\"$ctrl.loc.errorConfirm\"></div> </div> <ng-transclude></ng-transclude> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"password\">{{$ctrl.loc.newPassword}} *</label> <input class=\"form-control\" type=\"password\" name=\"password\" id=\"password\" ng-model=\"$ctrl.user.password\" required> </div> <div class=\"form-group\" ng-class=\"{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }\"> <label class=\"control-label\" for=\"confirmPassword\">{{$ctrl.loc.confirm}} *</label> <input class=\"form-control\" type=\"password\" name=\"confirmPassword\" id=\"confirmPassword\" ng-model=\"$ctrl.user.confirmPassword\" required> </div> <button type=\"submit\" class=\"btn btn-primary pull-right\" ng-bind=\"$ctrl.loc.submit\"></button> </div> <div class=\"alert alert-success\" ng-if=\"$ctrl.success\"> <h4><i class=\"icon fa fa-check\"></i> {{$ctrl.loc.successResetPasswordTitle}}</h4> <p ng-bind=\"$ctrl.loc.successResetPassword\"></p> <a ng-if=\"!$ctrl.isLoginPage\" ng-href=\"{{$ctrl.loginUrl}}\" ng-bind=\"$ctrl.loc.loginPage\"></a> </div> </form>"
   );
 
 }]);

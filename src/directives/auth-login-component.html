@@ -1,0 +1,22 @@
+<form name="authForm" ng-submit="$ctrl.submit(authForm)" novalidate>
+    <div class="alert alert-danger" ng-if="$ctrl.message || (authForm.$invalid && authForm.$submitted)">
+        <h4><i class="icon fa fa-warning"></i> {{$ctrl.loc.errorTitle}}</h4>
+
+        {{$ctrl.message}}
+
+        <div ng-show="authForm.email.$error.email || authForm.email.$error.required" ng-bind="$ctrl.loc.errorEmail"></div>
+        <div ng-show="authForm.password.$error.required" ng-bind="$ctrl.loc.errorPassword"></div>
+    </div>
+
+    <div class="form-group" ng-class="{ 'has-error': (authForm.email.$invalid && authForm.$submitted) }">
+        <label class="control-label" for="email">{{$ctrl.loc.email}} * </label>
+        <input class="form-control" type="email" name="email" id="email" ng-model="$ctrl.user.email" required/>
+    </div>
+    <div class="form-group" ng-class="{ 'has-error': (authForm.password.$invalid && authForm.$submitted) }">
+        <label class="control-label" for="password">{{$ctrl.loc.password}} *</label>
+        <input class="form-control" type="password" name="password" id="password" ng-model="$ctrl.user.password" required/>
+    </div>
+
+    <button type="submit" class="btn btn-primary pull-right" ng-bind="$ctrl.loc.login">Login</button>
+    <ng-transclude></ng-transclude>
+</form>
