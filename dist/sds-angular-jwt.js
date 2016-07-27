@@ -324,6 +324,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
                 try {
                     $window.localStorage.token = self.authentication.token;
+                    $window.localStorage.useRefreshToken = self.authentication.useRefreshToken;
 
                 } catch (err) {
                     _clearLocalStorage();
@@ -427,15 +428,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
         self.fillAuthData = function () {
             if ($window.localStorage.token) {
-                self.authentication.isAuth = true;
-                self.authentication.token = $window.localStorage.token;
-
-                var responseData = jwtHelper.decodeToken($window.localStorage.token);
-                if(responseData.data){
-                    self.authentication.data = responseData.data;
-                }else{
-                    self.authentication.data = responseData;
-                }
+                _processResponse({token: $window.localStorage.token, useRefreshToken: $window.localStorage.useRefreshToken});
             }
         };
 
