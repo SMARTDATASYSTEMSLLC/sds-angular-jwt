@@ -35,7 +35,7 @@
             } else {
                 if(newRoute) {
                     var hasAccess = true;
-                    if (typeof newRoute.auth === "string" && !authConfig.permissionLookup(newRoute.auth, authService.authentication.data,  params)){
+                    if (newRoute.auth && typeof newRoute.auth !== "boolean" && !authConfig.permissionLookup(newRoute.auth, authService.authentication.data,  params)){
                         hasAccess = false;
                         previousLocation = previousLocation || "/";
                     }

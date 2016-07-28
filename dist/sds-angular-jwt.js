@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.6.2 
+ * @version 0.6.4 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -45,7 +45,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             } else {
                 if(newRoute) {
                     var hasAccess = true;
-                    if (typeof newRoute.auth === "string" && !authConfig.permissionLookup(newRoute.auth, authService.authentication.data,  params)){
+                    if (newRoute.auth && typeof newRoute.auth !== "boolean" && !authConfig.permissionLookup(newRoute.auth, authService.authentication.data,  params)){
                         hasAccess = false;
                         previousLocation = previousLocation || "/";
                     }
@@ -315,35 +315,43 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         };
 
         var _processResponse = function(response){
-            return $q(function(resolve, reject) {
-                self.authentication.isAuth = true;
-                self.authentication.token = response.token || response.access_token;
-                self.authentication.useRefreshToken = response.refresh_token || null;
-                var responseData = jwtHelper.decodeToken(self.authentication.token);
+            self.authentication.isAuth = true;
+            self.authentication.token = response.token || response.access_token;
+            self.authentication.useRefreshToken = response.refresh_token || null;
+            var responseData = jwtHelper.decodeToken(self.authentication.token);
 
 
-                try {
-                    $window.localStorage.token = self.authentication.token;
-                    $window.localStorage.useRefreshToken = self.authentication.useRefreshToken;
+            try {
+                $window.localStorage.setItem('token', self.authentication.token);
+                $window.localStorage.setItem('useRefreshToken', self.authentication.useRefreshToken);
 
-                } catch (err) {
-                    _clearLocalStorage();
-                    return reject({message: 'This application does not support private browsing mode. Please turn off private browsing to log in.'});
-                }
+            } catch (err) {
+                _clearLocalStorage();
+                return $q.reject({message: 'This application does not support private browsing mode. Please turn off private browsing to log in.'});
+            }
 
-                $q
-                    .when(authConfig.formatAuthData(responseData.data || responseData))
-                    .then(function (data){
+            return $q.when(authConfig.formatAuthData(responseData.data || responseData)).then(function (data){
+                self.authentication.data = data;
 
+                $window.localStorage.setItem('authData', $window.btoa(JSON.stringify(self.authentication.data)));
+                $rootScope.$broadcast("auth:userUpdate");
 
-                        self.authentication.data = data;
-                        $rootScope.$broadcast("auth:userUpdate");
-
-                        return resolve(self.authentication);
-
-                });
-
+                return self.authentication;
             });
+        };
+
+        var _fillAuthData = function () {
+            if ($window.localStorage.getItem('token')) {
+                if ($window.localStorage.getItem('authData')) {
+                    // fill in the last know authdata from localstorage for page reload use cases - this will get blown away when the response promise resolves
+                    try {
+                        self.authentication.data = JSON.parse($window.atob($window.localStorage.getItem('authData')));
+                    }catch(err){
+                        $window.localStorage.removeItem('authData');
+                    }
+                }
+                _processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
+            }
         };
 
         self.authentication = {
@@ -405,8 +413,8 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
         self.refreshToken = function () {
             return $q(function(resolve, reject) {
-                if ($window.localStorage.token) {
-                    var authData = jwtHelper.decodeToken($window.localStorage.token);
+                if ($window.localStorage.getItem('token')) {
+                    var authData = jwtHelper.decodeToken($window.localStorage.getItem('token'));
                     if (authData && authData.useRefreshToken !== false) {
                         $window.localStorage.removeItem('token');
 
@@ -426,13 +434,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             });
         };
 
-        self.fillAuthData = function () {
-            if ($window.localStorage.token) {
-                _processResponse({token: $window.localStorage.token, useRefreshToken: $window.localStorage.useRefreshToken});
-            }
-        };
-
-        self.fillAuthData();
+        _fillAuthData();
 
         return self;
 
