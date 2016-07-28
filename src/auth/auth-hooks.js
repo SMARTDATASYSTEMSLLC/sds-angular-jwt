@@ -6,7 +6,7 @@
 
     })
     .run(function($q, $location, $rootScope, authService, authConfig) {
-        var previousLocation = authConfig.loginUrl,
+        var previousLocation = "/",
             postLogInRoute;
 
 

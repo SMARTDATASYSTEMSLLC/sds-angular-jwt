@@ -40,20 +40,6 @@
             });
         };
 
-        var _fillAuthData = function () {
-            if ($window.localStorage.getItem('token')) {
-                if ($window.localStorage.getItem('authData')) {
-                    // fill in the last know authdata from localstorage for page reload use cases - this will get blown away when the response promise resolves
-                    try {
-                        self.authentication.data = JSON.parse($window.atob($window.localStorage.getItem('authData')));
-                    }catch(err){
-                        $window.localStorage.removeItem('authData');
-                    }
-                }
-                _processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
-            }
-        };
-
         self.authentication = {
             isAuth: false,
             data: {},
@@ -134,7 +120,23 @@
             });
         };
 
-        _fillAuthData();
+        self.fillAuthData = function () {
+            if ($window.localStorage.getItem('token')) {
+                if ($window.localStorage.getItem('authData')) {
+                    // fill in the last know authdata from localstorage for page reload use cases - this will get blown away when the response promise resolves
+                    try {
+                        self.authentication.data = JSON.parse($window.atob($window.localStorage.getItem('authData')));
+                    }catch(err){
+                        $window.localStorage.removeItem('authData');
+                    }
+                }
+                return _processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
+            }
+
+            return $q.when(self.authentication);
+        };
+
+        self.fillAuthData();
 
         return self;
 
