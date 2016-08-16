@@ -71,16 +71,16 @@
                     _clearLocalStorage();
                     if(logOffUser ) {
                         $rootScope.$broadcast("auth:userLogOff");
-                        defer.resolve();
                     }
+                    defer.resolve();
                 });
             }else {
                 $timeout(function (){
                     _clearLocalStorage();
                     if (logOffUser) {
                         $rootScope.$broadcast("auth:userLogOff");
-                        defer.resolve();
                     }
+                    defer.resolve();
                 });
             }
             return defer.promise;

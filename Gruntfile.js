@@ -10,9 +10,9 @@ module.exports = function(grunt) {
         ' * <%= pkg.description %>\n' +
         ' * @version <%= pkg.version %> \n' +
         ' * \n' +
-        ' * Copyright (c) <%= grunt.template.today("yyyy") %> <%= _.pluck(pkg.authors, "name").join(", ") %> \n' +
+        ' * Copyright (c) <%= grunt.template.today("yyyy") %> <%= _.map(pkg.authors, "name").join(", ") %> \n' +
         ' * @link <%= pkg.homepage %> \n' +
-        ' * @license  <%= _.pluck(pkg.licenses, "type").join(", ") %> \n' +
+        ' * @license  <%= _.map(pkg.licenses, "type").join(", ") %> \n' +
         ' */ \n',
         // Task configuration.
         concat: {
@@ -70,8 +70,8 @@ module.exports = function(grunt) {
             options:{
                 jshintrc: '.jshintrc'
             },
-            src: {
-                src: 'src/**/*.js'
+            all: {
+                src: ['src/**/*.js']
             }
         },
         connect: {
