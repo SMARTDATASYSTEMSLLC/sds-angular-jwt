@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.6.6 
+ * @version 0.6.7 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -86,7 +86,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
                 config.headers = config.headers || {};
 
-                if (authService.authentication.isAuth) {
+                if (!authService.isExpired()) {
                     config.headers.Authorization = 'Bearer ' + authService.authentication.token;
                 }
 
@@ -112,8 +112,6 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         };
 
         var _responseError = function (rejection) {
-            var title = "", message ="";
-
             if (rejection.status === 401 && !_isLoginOrRegistrationPath()) {
                 var authService = $injector.get('authService');
 
@@ -313,6 +311,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             };
 
             $window.localStorage.removeItem('token');
+            $window.localStorage.removeItem('authData');
         };
 
         var _processResponse = function(response){
@@ -320,7 +319,12 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             self.authentication.token = response.token || response.access_token;
             self.authentication.useRefreshToken = response.refresh_token || null;
             var responseData = jwtHelper.decodeToken(self.authentication.token);
+            self.authentication.expiration = responseData.exp;
 
+            if (self.isExpired()){
+                _clearLocalStorage();
+                return $q.reject({message: 'The token is expired'});
+            }
 
             try {
                 $window.localStorage.setItem('token', self.authentication.token);
@@ -397,6 +401,14 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         };
 
         self.is = self.allowed;
+
+        self.isExpired = function (){
+            if (self.authentication.isAuth && (!self.authentication.expiration || self.authentication.expiration > Date.now())){
+                return false;
+            }else{
+                return true;
+            }
+        };
 
         self.refreshToken = function () {
             return $q(function(resolve, reject) {

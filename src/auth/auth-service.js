@@ -12,6 +12,7 @@
             };
 
             $window.localStorage.removeItem('token');
+            $window.localStorage.removeItem('authData');
         };
 
         var _processResponse = function(response){
@@ -19,7 +20,12 @@
             self.authentication.token = response.token || response.access_token;
             self.authentication.useRefreshToken = response.refresh_token || null;
             var responseData = jwtHelper.decodeToken(self.authentication.token);
+            self.authentication.expiration = responseData.exp;
 
+            if (self.isExpired()){
+                _clearLocalStorage();
+                return $q.reject({message: 'The token is expired'});
+            }
 
             try {
                 $window.localStorage.setItem('token', self.authentication.token);
@@ -96,6 +102,14 @@
         };
 
         self.is = self.allowed;
+
+        self.isExpired = function (){
+            if (self.authentication.isAuth && (!self.authentication.expiration || self.authentication.expiration > Date.now())){
+                return false;
+            }else{
+                return true;
+            }
+        };
 
         self.refreshToken = function () {
             return $q(function(resolve, reject) {

@@ -10,7 +10,7 @@
 
                 config.headers = config.headers || {};
 
-                if (authService.authentication.isAuth) {
+                if (!authService.isExpired()) {
                     config.headers.Authorization = 'Bearer ' + authService.authentication.token;
                 }
 
@@ -36,8 +36,6 @@
         };
 
         var _responseError = function (rejection) {
-            var title = "", message ="";
-
             if (rejection.status === 401 && !_isLoginOrRegistrationPath()) {
                 var authService = $injector.get('authService');
 
