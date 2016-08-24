@@ -104,7 +104,7 @@
         self.is = self.allowed;
 
         self.isExpired = function (){
-            if (self.authentication.isAuth && (!self.authentication.expiration || self.authentication.expiration > Date.now())){
+            if (self.authentication.isAuth && (!self.authentication.expiration || self.authentication.expiration *1000 > Date.now())){
                 return false;
             }else{
                 return true;

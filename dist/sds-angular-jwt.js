@@ -1,7 +1,7 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.6.7 
+ * @version 0.6.8 
  * 
  * Copyright (c) 2016 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
@@ -403,7 +403,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         self.is = self.allowed;
 
         self.isExpired = function (){
-            if (self.authentication.isAuth && (!self.authentication.expiration || self.authentication.expiration > Date.now())){
+            if (self.authentication.isAuth && (!self.authentication.expiration || self.authentication.expiration *1000 > Date.now())){
                 return false;
             }else{
                 return true;
