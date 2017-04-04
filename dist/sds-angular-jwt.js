@@ -187,6 +187,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         self.tokenUrl = '/api/auth';
         self.refreshUrl = '/api/auth/refresh';
         self.loginUrl = '/login';
+        self.loginFunction = null;
         self.notFoundUrl = null;
         self.localization = {
             errorTitle: 'There seems to be a problem',
@@ -218,6 +219,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
         self.$get = function AuthConfig () {
             return {
+                loginFunction: self.loginFunction,
                 onLoadStart: self.onLoadStart,
                 onLoadEnd: self.onLoadEnd,
                 permissionLookup: self.permissionLookup,
@@ -276,6 +278,10 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
         self.setLoginUrl = function (url){
             self.loginUrl = url;
+        };
+
+        self.setLoginFunction = function (url){
+            self.loginFunction = url;
         };
 
         self.setNotFoundUrl = function (url){
@@ -353,15 +359,21 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
         };
 
         self.login = function () {
-            return $q
-                .when(authConfig.formatLoginParams.apply(this, arguments))
-                .then(function (formattedLoginData){
-                    return $injector.get('$http').post(authConfig.tokenUrl, $.param(formattedLoginData), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-                })
-                .then(function (response) {
-                    //decode the token to get the data we need:
-                    return self._processResponse(response.data);
-                });
+            if (authConfig.loginFunction){
+                self.$injector = $injector;
+                return $q.when(authConfig.loginFunction.apply(self, arguments));
+            }else {
+                return $q
+                    .when(authConfig.formatLoginParams.apply(this, arguments))
+                    .then(function (formattedLoginData) {
+                        return $injector.get('$http')
+                            .post(authConfig.tokenUrl, $.param(formattedLoginData), {headers: {'Content-Type': 'application/x-www-form-urlencoded'}});
+                    })
+                    .then(function (response) {
+                        //decode the token to get the data we need:
+                        return self._processResponse(response.data);
+                    });
+            }
         };
 
         //logOffUser optional parameter

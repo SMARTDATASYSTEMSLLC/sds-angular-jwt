@@ -29,6 +29,7 @@
         self.tokenUrl = '/api/auth';
         self.refreshUrl = '/api/auth/refresh';
         self.loginUrl = '/login';
+        self.loginFunction = null;
         self.notFoundUrl = null;
         self.localization = {
             errorTitle: 'There seems to be a problem',
@@ -60,6 +61,7 @@
 
         self.$get = function AuthConfig () {
             return {
+                loginFunction: self.loginFunction,
                 onLoadStart: self.onLoadStart,
                 onLoadEnd: self.onLoadEnd,
                 permissionLookup: self.permissionLookup,
@@ -118,6 +120,10 @@
 
         self.setLoginUrl = function (url){
             self.loginUrl = url;
+        };
+
+        self.setLoginFunction = function (url){
+            self.loginFunction = url;
         };
 
         self.setNotFoundUrl = function (url){
