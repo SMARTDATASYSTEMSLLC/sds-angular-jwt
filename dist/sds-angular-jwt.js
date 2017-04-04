@@ -1,9 +1,9 @@
 /*! 
  * sds-angular-jwt
  * Angular JWT framework
- * @version 0.6.8 
+ * @version 0.6.9 
  * 
- * Copyright (c) 2016 David Benson, Steve Gentile 
+ * Copyright (c) 2017 David Benson, Steve Gentile 
  * @link https://github.com/SMARTDATASYSTEMSLLC/sds-angular-jwt 
  * @license  MIT 
  */ 
@@ -314,7 +314,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
             $window.localStorage.removeItem('authData');
         };
 
-        var _processResponse = function(response){
+        self._processResponse = function(response){
             self.authentication.isAuth = true;
             self.authentication.token = response.token || response.access_token;
             self.authentication.useRefreshToken = response.refresh_token || null;
@@ -360,7 +360,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                 })
                 .then(function (response) {
                     //decode the token to get the data we need:
-                    return _processResponse(response.data);
+                    return self._processResponse(response.data);
                 });
         };
 
@@ -419,7 +419,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
 
                         return $injector.get('$http').post(authConfig.refreshUrl)
                             .then(function (response) {
-                                return _processResponse(response.data).then(function () {
+                                return self._processResponse(response.data).then(function () {
                                     return resolve();
                                 });
                             }, function (err) {
@@ -443,7 +443,7 @@ angular.module('sds-angular-jwt', ['angular-jwt']);
                         $window.localStorage.removeItem('authData');
                     }
                 }
-                return _processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
+                return self._processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
             }
 
             return $q.when(self.authentication);

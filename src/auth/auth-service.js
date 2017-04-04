@@ -15,7 +15,7 @@
             $window.localStorage.removeItem('authData');
         };
 
-        var _processResponse = function(response){
+        self._processResponse = function(response){
             self.authentication.isAuth = true;
             self.authentication.token = response.token || response.access_token;
             self.authentication.useRefreshToken = response.refresh_token || null;
@@ -61,7 +61,7 @@
                 })
                 .then(function (response) {
                     //decode the token to get the data we need:
-                    return _processResponse(response.data);
+                    return self._processResponse(response.data);
                 });
         };
 
@@ -120,7 +120,7 @@
 
                         return $injector.get('$http').post(authConfig.refreshUrl)
                             .then(function (response) {
-                                return _processResponse(response.data).then(function () {
+                                return self._processResponse(response.data).then(function () {
                                     return resolve();
                                 });
                             }, function (err) {
@@ -144,7 +144,7 @@
                         $window.localStorage.removeItem('authData');
                     }
                 }
-                return _processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
+                return self._processResponse({token: $window.localStorage.getItem('token'), useRefreshToken: $window.localStorage.getItem('useRefreshToken')});
             }
 
             return $q.when(self.authentication);
